@@ -1,0 +1,7 @@
+server:
+  host: localhost
+  port: 8000
+workers:
+  list: worker-1:13002:worker-2:13001
+  taskSize: 1000000
+

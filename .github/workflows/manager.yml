@@ -1,0 +1,38 @@
+name: manager build and test
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - unlocked
+      - auto_merge_enabled
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  manager-build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./manager
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test

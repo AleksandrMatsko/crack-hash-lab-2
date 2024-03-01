@@ -1,0 +1,26 @@
+name: compose build
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - unlocked
+      - auto_merge_enabled
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: docker compose build
+        run: docker compose build
+
+
