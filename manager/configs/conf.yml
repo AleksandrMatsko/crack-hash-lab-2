@@ -4,4 +4,5 @@ server:
 workers:
   list: worker-1:13002:worker-2:13001
   taskSize: 1000000
-
+mongo:
+  connStr: mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0

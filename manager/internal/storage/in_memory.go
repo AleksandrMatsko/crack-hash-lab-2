@@ -105,3 +105,5 @@ func (s *InMemoryStorage) Atomically(reqID uuid.UUID, fn func(req *RequestMetada
 	}
 	return RequestMetadata{}, ErrNoSuchRequest
 }
+
+func (s *InMemoryStorage) Close() {}

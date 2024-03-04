@@ -10,10 +10,12 @@ import (
 
 // configureEnvs bind viper keys to specified envs
 func configureEnvs() {
-	_ = viper.BindEnv("server.host", appEnvServerPrefix+"_HOST")
-	_ = viper.BindEnv("server.port", appEnvServerPrefix+"_PORT")
-	_ = viper.BindEnv("workers.list", appEnvWorkersPrefix+"_LIST")
-	_ = viper.BindEnv("workers.taskSize", appEnvWorkersPrefix+"_TASK_SIZE")
+	_ = viper.BindEnv(serverHostKey, appEnvServerPrefix+"_HOST")
+	_ = viper.BindEnv(serverPortKey, appEnvServerPrefix+"_PORT")
+	_ = viper.BindEnv(workersListKey, appEnvWorkersPrefix+"_LIST")
+	_ = viper.BindEnv(workersTaskSizeKey, appEnvWorkersPrefix+"_TASK_SIZE")
+	_ = viper.BindEnv(mongoConnStrKey, appEnvMongoPrefix+"_CONNSTR")
+	_ = viper.BindEnv(mongoDbNameKey, appEnvMongoPrefix+"_DBNAME")
 }
 
 func ConfigureApp() {
@@ -30,7 +32,7 @@ func ConfigureApp() {
 }
 
 func GetWorkers() ([]string, error) {
-	s := viper.GetString("workers.list")
+	s := viper.GetString(workersListKey)
 	if s == "" {
 		return make([]string, 0), nil
 	}
@@ -54,10 +56,18 @@ func GetWorkers() ([]string, error) {
 }
 
 func GetTaskSize() (uint64, error) {
-	s := viper.GetString("workers.taskSize")
+	s := viper.GetString(workersTaskSizeKey)
 	val, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	return val, nil
+}
+
+func GetMongoConnStr() (string, error) {
+	s := viper.GetString(mongoConnStrKey)
+	if s == "" {
+		return s, ErrNoMongoConnStr
+	}
+	return s, nil
 }

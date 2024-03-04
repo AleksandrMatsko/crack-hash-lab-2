@@ -14,6 +14,7 @@ type Storage interface {
 	Ctx() context.Context
 	// SaveNew should save provided metadata to storage and return generated id
 	SaveNew(metadata RequestMetadata) (uuid.UUID, error)
+	Close()
 }
 
 func SetStatusErrAndSave(logger *log.Logger, S Storage, requestID uuid.UUID) {

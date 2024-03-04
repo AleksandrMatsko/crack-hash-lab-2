@@ -42,7 +42,21 @@ func Main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	store := storage.InitInMemoryStorage(ctx)
+	var store storage.Storage
+	connStr, err := config.GetMongoConnStr()
+	if err != nil {
+		log.Printf("failed to get mongo connection string: %s", err)
+		log.Printf("using in memory storage...")
+		store = storage.InitInMemoryStorage(ctx)
+	} else {
+		store, err = storage.InitMongoStorage(ctx, connStr)
+		if err != nil {
+			log.Fatalf("failed to connect to mongo: %s", err)
+		}
+		defer store.Close()
+		log.Println("successfully connected to mongodb")
+	}
+
 	A := alphabet.InitAlphabet(prepareAlphabetRunes())
 	log.Printf("alphabet: '%s'", A.ToOneLine())
 
