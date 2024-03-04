@@ -15,7 +15,7 @@ func configureEnvs() {
 	_ = viper.BindEnv(workersListKey, appEnvWorkersPrefix+"_LIST")
 	_ = viper.BindEnv(workersTaskSizeKey, appEnvWorkersPrefix+"_TASK_SIZE")
 	_ = viper.BindEnv(mongoConnStrKey, appEnvMongoPrefix+"_CONNSTR")
-	_ = viper.BindEnv(mongoDbNameKey, appEnvMongoPrefix+"_DBNAME")
+	_ = viper.BindEnv(mongoDBNameKey, appEnvMongoPrefix+"_DBNAME")
 }
 
 func ConfigureApp() {
@@ -70,4 +70,16 @@ func GetMongoConnStr() (string, error) {
 		return s, ErrNoMongoConnStr
 	}
 	return s, nil
+}
+
+func GetMongoDBName() string {
+	s := viper.GetString(mongoDBNameKey)
+	if s == "" {
+		return defaultDBName
+	}
+	return s
+}
+
+func GetMongoDBCollectionName() string {
+	return defaultCollectionName
 }

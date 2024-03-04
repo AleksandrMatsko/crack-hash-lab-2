@@ -8,11 +8,10 @@ require (
 )
 
 require (
-	distributed.systems.labs/shared/pkg/middlewares v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/alphabet v0.0.0-unpublished
-	distributed.systems.labs/shared/pkg/contracts v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/cartesian-gen v0.0.0-unpublished
-	gonum.org/v1/gonum v0.14.0
+	distributed.systems.labs/shared/pkg/contracts v0.0.0-unpublished
+	distributed.systems.labs/shared/pkg/middlewares v0.0.0-unpublished
 )
 
 replace distributed.systems.labs/shared/pkg/middlewares v0.0.0-unpublished => ./../shared/pkg/middlewares

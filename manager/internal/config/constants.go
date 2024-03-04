@@ -23,5 +23,10 @@ const (
 	workersListKey     = "workers.list"
 	workersTaskSizeKey = "workers.taskSize"
 	mongoConnStrKey    = "mongo.connStr"
-	mongoDbNameKey     = "mongo.dbname"
+	mongoDBNameKey     = "mongo.dbname"
+)
+
+const (
+	defaultDBName         = "CrackHash"
+	defaultCollectionName = "Requests"
 )

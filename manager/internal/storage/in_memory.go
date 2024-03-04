@@ -42,8 +42,8 @@ func (s *InMemoryStorage) SaveNew(metadata RequestMetadata) (uuid.UUID, error) {
 
 func (s *InMemoryStorage) AddCracks(reqID uuid.UUID, cracks []string, startIndex uint64) error {
 	s.locker.Lock()
+	defer s.locker.Unlock()
 	data, ok := s.data[reqID]
-	s.locker.Unlock()
 
 	if !ok {
 		return ErrNoSuchRequest
@@ -54,13 +54,6 @@ func (s *InMemoryStorage) AddCracks(reqID uuid.UUID, cracks []string, startIndex
 		}
 	}
 
-	s.locker.Lock()
-	defer s.locker.Unlock()
-
-	data, ok = s.data[reqID]
-	if !ok {
-		return ErrNoSuchRequest
-	}
 	numDone := 0
 	for i := range data.Tasks {
 		if data.Tasks[i].StartIndex == startIndex && !data.Tasks[i].Done {
@@ -93,7 +86,7 @@ func (s *InMemoryStorage) Ctx() context.Context {
 	return s.ctx
 }
 
-func (s *InMemoryStorage) Atomically(reqID uuid.UUID, fn func(req *RequestMetadata)) (RequestMetadata, error) {
+func (s *InMemoryStorage) Atomically(reqID uuid.UUID, fn func(req *RequestMetadata) error) (RequestMetadata, error) {
 	s.locker.Lock()
 	defer s.locker.Unlock()
 

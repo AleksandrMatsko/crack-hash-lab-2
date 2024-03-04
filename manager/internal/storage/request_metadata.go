@@ -9,7 +9,7 @@ import (
 
 type RequestMetadata struct {
 	Alphabet  alphabet.Alphabet
-	ID        uuid.UUID
+	ID        uuid.UUID `bson:"_id"`
 	Status    config.RequestStatus
 	Cracks    []string
 	Hash      string

@@ -16,7 +16,7 @@ services:
       - MANAGER_WORKERS_TASK_SIZE=10000000
       - MANAGER_WORKERS_LIST=worker-1:8000:worker-2:8000
       - MANAGER_MONGO_CONNSTR=mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0
-      - MANAGER_MONGO_DBNAME=crack_hash
+      - MANAGER_MONGO_DBNAME=CrackHash
 
 
   worker-1:
@@ -53,7 +53,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=crack_hash
+      - MONGO_INITDB_DATABASE=CrackHash
     healthcheck:
       test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo1:27017',priority:1},{_id:1,host:'mongo2:27018',priority:0.5},{_id:2,host:'mongo3:27019',priority:0.5}]}) }" | mongosh --port 27017 --quiet
       interval: 5s
@@ -70,7 +70,7 @@ services:
      ports:
        - "27018:27018"
      environment:
-       - MONGO_INITDB_DATABASE=crack_hash
+       - MONGO_INITDB_DATABASE=CrackHash
      volumes:
        - "mongo2_data:/data/db"
        - "mongo2_config:/data/configdb"
@@ -81,7 +81,7 @@ services:
     ports:
       - "27019:27019"
     environment:
-      - MONGO_INITDB_DATABASE=crack_hash
+      - MONGO_INITDB_DATABASE=CrackHash
     volumes:
       - "mongo3_data:/data/db"
       - "mongo3_config:/data/configdb"

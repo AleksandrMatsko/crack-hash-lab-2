@@ -76,8 +76,9 @@ func SendToWorkers(
 					notSentTasksMtx.Unlock()
 					return
 				}
-				_, _ = S.Atomically(m.ID, func(r *storage.RequestMetadata) {
+				_, _ = S.Atomically(m.ID, func(r *storage.RequestMetadata) error {
 					r.Tasks[t.TaskIdx].StartedAt = time.Now()
+					return nil
 				})
 			}
 
