@@ -7,6 +7,7 @@ import (
 	"distributed.systems.labs/manager/internal/storage"
 	"distributed.systems.labs/shared/pkg/alphabet"
 	"fmt"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
@@ -28,13 +29,9 @@ func prepareAlphabetRunes() []rune {
 
 func Main() {
 	config.ConfigureApp()
-	host := viper.GetString("server.host")
-	if host == "" {
-		log.Fatalf("no host provided")
-	}
-	port := viper.GetString("server.port")
-	if port == "" {
-		log.Fatalf("no port provided")
+	host, port, err := config.GetHostPort()
+	if err != nil {
+		log.Fatalf("error occured while starting: %s", err)
 	}
 	log.Printf("configure to listen on http://%s:%s", host, port)
 	log.Printf("workers %s", viper.GetString("workers.list"))
@@ -56,6 +53,17 @@ func Main() {
 		defer store.Close()
 		log.Println("successfully connected to mongodb")
 	}
+
+	mqConnStr, err := config.GetRabbitMQConnStr()
+	if err != nil {
+		log.Fatalf("failed to get RabbitMQ connection string: %s", err)
+	}
+	connection, err := amqp.Dial(mqConnStr)
+	if err != nil {
+		log.Fatalf("failed to establish connection with RabbitMQ: %s", err)
+	}
+	defer connection.Close()
+	log.Println("successfully connected to RabbitMQ")
 
 	A := alphabet.InitAlphabet(prepareAlphabetRunes())
 	log.Printf("alphabet: '%s'", A.ToOneLine())

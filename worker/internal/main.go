@@ -6,7 +6,7 @@ import (
 	"distributed.systems.labs/worker/internal/config"
 	"distributed.systems.labs/worker/internal/notify"
 	"fmt"
-	"github.com/spf13/viper"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"net/http"
 	"os"
@@ -17,16 +17,17 @@ import (
 func Main() {
 	config.ConfigureApp()
 
-	host := viper.GetString("server.host")
-	if host == "" {
-		log.Fatalf("no host provided")
-	}
-	port := viper.GetString("server.port")
-	if port == "" {
-		log.Fatalf("no port provided")
+	host, port, err := config.GetHostPort()
+	if err != nil {
+		log.Fatalf("error occured while starting: %s", err)
 	}
 	log.Printf("configure to listen on http://%s:%s", host, port)
-	log.Printf("manager %s:%s", viper.GetString("manager.host"), viper.GetString("manager.port"))
+
+	managerHost, err := config.GetManagerHostAndPort()
+	if err != nil {
+		log.Fatalf("error occured while starting: %s", err)
+	}
+	log.Printf("manager %s", managerHost)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -37,6 +38,17 @@ func Main() {
 		log.Println("starting manager notifier ...")
 		managerNotifier.ListenAndNotify()
 	}()
+
+	mqConnStr, err := config.GetRabbitMQConnStr()
+	if err != nil {
+		log.Fatalf("failed to get RabbitMQ connection string: %s", err)
+	}
+	connection, err := amqp.Dial(mqConnStr)
+	if err != nil {
+		log.Fatalf("failed to establish connection with RabbitMQ: %s", err)
+	}
+	defer connection.Close()
+	log.Println("successfully connected to RabbitMQ")
 
 	r := api.ConfigureEndpoints(managerNotifier)
 	srv := &http.Server{

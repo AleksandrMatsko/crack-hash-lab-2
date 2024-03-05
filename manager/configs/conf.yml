@@ -6,3 +6,8 @@ workers:
   taskSize: 1000000
 mongo:
   connStr: mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0
+rabbitmq:
+  connStr: amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
+  taskExchange: tasks
+  resultExchange: results
+  resultQueue: res_queue

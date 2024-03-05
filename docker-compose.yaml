@@ -2,50 +2,89 @@ name: crack-hash-2
 
 version: '3.4'
 services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=rmuser
+      - RABBITMQ_DEFAULT_PASS=rmpassword
+      - RABBITMQ_DEFAULT_VHOST=crackHash
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 5s
+      timeout: 20s
+      retries: 5
+
+#### Manager
+
   manager:
     build:
       context: .
       dockerfile: ./manager/Dockerfile
-
     ports:
       - "13001:8000"
-
     environment:
       - MANAGER_SERVER_HOST=0.0.0.0
       - MANAGER_SERVER_PORT=8000
       - MANAGER_WORKERS_TASK_SIZE=10000000
+      - MANAGER_WORKERS_COUNT=2
       - MANAGER_WORKERS_LIST=worker-1:8000:worker-2:8000
       - MANAGER_MONGO_CONNSTR=mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0
       - MANAGER_MONGO_DBNAME=CrackHash
+      - MANAGER_RABBITMQ_CONNSTR=amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
+      - MANAGER_RABBITMQ_TASK_EXCHANGE=tasks
+      - MANAGER_RABBITMQ_RESULT_EXCHANGE=results
+      - MANAGER_RABBITMQ_RESULT_QUEUE=res_queue
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
+#### Workers
 
   worker-1:
     build:
       context: .
       dockerfile: ./worker/Dockerfile
-
     ports:
       - "13002:8000"
-
     environment:
       - WORKER_SERVER_HOST=0.0.0.0
       - WORKER_SERVER_PORT=8000
       - WORKER_MANAGER_HOST=manager
       - WORKER_MANAGER_PORT=8000
+      - WORKER_RABBITMQ_CONNSTR=amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
+      - WORKER_RABBITMQ_TASK_EXCHANGE=tasks
+      - WORKER_RABBITMQ_TASK_QUEUE=task_queue
+      - WORKER_RABBITMQ_RESULT_EXCHANGE=results
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   worker-2:
     build:
       context: .
       dockerfile: ./worker/Dockerfile
-
     ports:
       - "13003:8000"
-
     environment:
       - WORKER_SERVER_HOST=0.0.0.0
       - WORKER_SERVER_PORT=8000
       - WORKER_MANAGER_HOST=manager
       - WORKER_MANAGER_PORT=8000
+      - WORKER_RABBITMQ_CONNSTR=amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
+      - WORKER_RABBITMQ_TASK_EXCHANGE=tasks
+      - WORKER_RABBITMQ_TASK_QUEUE=tasks_queue
+      - WORKER_RABBITMQ_RESULT_EXCHANGE=results
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
+#### MongoDB cluster
 
   mongo1:
     image: mongo:7.0
