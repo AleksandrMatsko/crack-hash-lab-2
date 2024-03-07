@@ -7,5 +7,6 @@ manager:
 rabbitmq:
   connStr: amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
   taskExchange: tasks
-  taskQueue: tasks_queue
+  taskQueue: task_queue
   resultExchange: results
+  reconnectTimeout: 10

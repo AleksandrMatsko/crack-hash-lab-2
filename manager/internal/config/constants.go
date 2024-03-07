@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // environment variables prefixes, used for app configuration
 const (
 	appEnvPrefix         = "MANAGER"
@@ -33,10 +35,11 @@ const (
 	mongoDBNameKey  = "mongo.dbname"
 
 	// RabbitMQ keys
-	rabbitMQConnStrKey        = "rabbitmq.connStr"
-	rabbitMQTaskExchangeKey   = "rabbitmq.taskExchange"
-	rabbitMQResultExchangeKey = "rabbitmq.resultExchange"
-	rabbitMQResultQueueKey    = "rabbitmq.resultQueue"
+	rabbitMQConnStrKey          = "rabbitmq.connStr"
+	rabbitMQTaskExchangeKey     = "rabbitmq.taskExchange"
+	rabbitMQResultExchangeKey   = "rabbitmq.resultExchange"
+	rabbitMQResultQueueKey      = "rabbitmq.resultQueue"
+	rabbitMQReconnectTimeoutKey = "rabbitmq.reconnectTimeout"
 )
 
 const (
@@ -45,7 +48,8 @@ const (
 	defaultCollectionName = "Requests"
 
 	// default values for RabbitMQ
-	defaultTaskExchange   = "tasks"
-	defaultResultExchange = "results"
-	defaultResultQueue    = "res_queue"
+	defaultTaskExchange     = "tasks"
+	defaultResultExchange   = "results"
+	defaultResultQueue      = "res_queue"
+	defaultReconnectTimeout = time.Second * 10
 )

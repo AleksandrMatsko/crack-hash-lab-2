@@ -77,7 +77,7 @@ services:
       - WORKER_MANAGER_PORT=8000
       - WORKER_RABBITMQ_CONNSTR=amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
       - WORKER_RABBITMQ_TASK_EXCHANGE=tasks
-      - WORKER_RABBITMQ_TASK_QUEUE=tasks_queue
+      - WORKER_RABBITMQ_TASK_QUEUE=task_queue
       - WORKER_RABBITMQ_RESULT_EXCHANGE=results
     depends_on:
       rabbitmq:

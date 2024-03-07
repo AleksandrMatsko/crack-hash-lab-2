@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // configureEnvs bind viper keys to specified envs
@@ -28,6 +29,7 @@ func configureEnvs() {
 	_ = viper.BindEnv(rabbitMQTaskExchangeKey, appEnvRabbitMQPrefix+"_TASK_EXCHANGE")
 	_ = viper.BindEnv(rabbitMQResultExchangeKey, appEnvRabbitMQPrefix+"_RESULT_EXCHANGE")
 	_ = viper.BindEnv(rabbitMQResultQueueKey, appEnvRabbitMQPrefix+"_RESULT_QUEUE")
+	_ = viper.BindEnv(rabbitMQReconnectTimeoutKey, appEnvRabbitMQPrefix+"_RECONNECT_TIMEOUT")
 }
 
 func ConfigureApp() {
@@ -138,4 +140,26 @@ func GetRabbitMQResultQueue() string {
 		return defaultResultQueue
 	}
 	return s
+}
+
+func GetRabbitMQReconnectTimeout() time.Duration {
+	s := viper.GetString(rabbitMQReconnectTimeoutKey)
+	if s == "" {
+		return defaultReconnectTimeout
+	}
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		return defaultReconnectTimeout
+	}
+	return time.Duration(val)
+}
+
+var toSendChan chan<- []byte
+
+func SetToSendChan(ch chan<- []byte) {
+	toSendChan = ch
+}
+
+func GetToSendChan() chan<- []byte {
+	return toSendChan
 }

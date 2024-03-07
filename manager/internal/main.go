@@ -6,8 +6,10 @@ import (
 	"distributed.systems.labs/manager/internal/config"
 	"distributed.systems.labs/manager/internal/storage"
 	"distributed.systems.labs/shared/pkg/alphabet"
+	"distributed.systems.labs/shared/pkg/communication"
+	"distributed.systems.labs/shared/pkg/contracts"
+	"encoding/json"
 	"fmt"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
@@ -25,6 +27,19 @@ func prepareAlphabetRunes() []rune {
 		runes = append(runes, r)
 	}
 	return runes
+}
+
+func setupCommunicator(comm *communication.RabbitMQCommunicator) error {
+	err := comm.DeclareExchange(config.GetRabbitMQTaskExchange())
+	if err != nil {
+		return err
+	}
+	err = comm.DeclareExchange(config.GetRabbitMQResultExchange())
+	if err != nil {
+		return err
+	}
+	err = comm.DeclareQueueAndBind(config.GetRabbitMQResultQueue(), config.GetRabbitMQResultExchange())
+	return err
 }
 
 func Main() {
@@ -58,12 +73,41 @@ func Main() {
 	if err != nil {
 		log.Fatalf("failed to get RabbitMQ connection string: %s", err)
 	}
-	connection, err := amqp.Dial(mqConnStr)
+	comm, err := communication.InitRabbitMQCommunicator(ctx, mqConnStr, config.GetRabbitMQReconnectTimeout())
 	if err != nil {
-		log.Fatalf("failed to establish connection with RabbitMQ: %s", err)
+		log.Fatalf("failed to init communicator: %s", err)
 	}
-	defer connection.Close()
-	log.Println("successfully connected to RabbitMQ")
+	defer comm.Close()
+
+	err = setupCommunicator(comm)
+	if err != nil {
+		log.Fatalf("failed to setup communicator: %s", err)
+	}
+
+	toSendChan := make(chan []byte, 1)
+	defer close(toSendChan)
+	config.SetToSendChan(toSendChan)
+
+	err = comm.RunPublisher(config.GetRabbitMQTaskExchange(), toSendChan)
+	if err != nil {
+		log.Fatalf("failed to start publisher: %s", err)
+	}
+	err = comm.RunConsumer(config.GetRabbitMQResultQueue(), func(data []byte, logger *log.Logger) error {
+		var req contracts.TaskResultRequest
+		err := json.Unmarshal(data, &req)
+		if err != nil {
+			return fmt.Errorf("failed to decode request body to json: %s", err)
+		}
+
+		err = store.AddCracks(req.RequestID, req.Cracks, req.StartIndex)
+		if err != nil {
+			return fmt.Errorf("requestId %s failed to add new cracks %s", req.RequestID, err)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("failed to start consumer: %s", err)
+	}
 
 	A := alphabet.InitAlphabet(prepareAlphabetRunes())
 	log.Printf("alphabet: '%s'", A.ToOneLine())

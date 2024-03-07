@@ -74,7 +74,7 @@ func (comm *RabbitMQCommunicator) DeclareQueueAndBind(queueName string, exchange
 	}()
 	q, err := ch.QueueDeclare(
 		queueName, // name
-		false,     // durable
+		true,      // durable
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
@@ -104,6 +104,8 @@ func (comm *RabbitMQCommunicator) publisher(
 	defer func() {
 		_ = ch.Close()
 	}()
+	counter := 0
+	logger.Printf("start")
 	for {
 		select {
 		case <-ctx.Done():
@@ -131,6 +133,8 @@ func (comm *RabbitMQCommunicator) publisher(
 				}
 				return
 			}
+			counter += 1
+			logger.Printf("published %v messages", counter)
 		}
 	}
 }
@@ -140,9 +144,11 @@ func (comm *RabbitMQCommunicator) RunPublisher(exchangeName string, dataSource <
 	if err != nil {
 		return err
 	}
-	logger := log.Default()
-	logger.SetPrefix(fmt.Sprintf("publisher (%s): ", exchangeName))
-	logger.SetFlags(logger.Flags() | log.Lmsgprefix)
+	defaultLogger := log.Default()
+	logger := log.New(
+		defaultLogger.Writer(),
+		fmt.Sprintf("publisher (%s): ", exchangeName),
+		defaultLogger.Flags()|log.Lmsgprefix)
 	go comm.publisher(comm.ctx, exchangeName, dataSource, ch, logger)
 	return nil
 }
@@ -150,13 +156,15 @@ func (comm *RabbitMQCommunicator) RunPublisher(exchangeName string, dataSource <
 func (comm *RabbitMQCommunicator) consumer(
 	ctx context.Context,
 	queueName string,
-	f func(data []byte) error,
+	f func(data []byte, logger *log.Logger) error,
 	ch *amqp.Channel,
 	logger *log.Logger,
 ) {
 	defer func() {
 		_ = ch.Close()
 	}()
+	counter := 0
+	logger.Printf("start")
 	msgs, err := ch.ConsumeWithContext(
 		ctx,
 		queueName, // queue
@@ -181,9 +189,11 @@ func (comm *RabbitMQCommunicator) consumer(
 		case d, ok := <-msgs:
 			if !ok {
 				logger.Printf("no msgs from channel. exiting...")
-
+				continue
 			}
-			err := f(d.Body)
+			counter += 1
+			logger.Printf("consumed %v messages", counter)
+			err := f(d.Body, logger)
 			if err != nil {
 				logger.Printf("error after executing user function: %s", err)
 			}
@@ -196,14 +206,16 @@ func (comm *RabbitMQCommunicator) consumer(
 	}
 }
 
-func (comm *RabbitMQCommunicator) RunConsumer(queueName string, f func(data []byte) error) error {
+func (comm *RabbitMQCommunicator) RunConsumer(queueName string, f func(data []byte, logger *log.Logger) error) error {
 	ch, err := comm.consumerConn.Channel()
 	if err != nil {
 		return err
 	}
-	logger := log.Default()
-	logger.SetPrefix(fmt.Sprintf("consumer (%s): ", queueName))
-	logger.SetFlags(logger.Flags() | log.Lmsgprefix)
+	defaultLogger := log.Default()
+	logger := log.New(
+		defaultLogger.Writer(),
+		fmt.Sprintf("consumer (%s): ", queueName),
+		defaultLogger.Flags()|log.Lmsgprefix)
 	go comm.consumer(comm.ctx, queueName, f, ch, logger)
 	return nil
 }
@@ -245,7 +257,7 @@ func (comm *RabbitMQCommunicator) reconnectPublisher(
 
 func (comm *RabbitMQCommunicator) reconnectConsumer(
 	queueName string,
-	f func(data []byte) error,
+	f func(data []byte, logger *log.Logger) error,
 ) {
 	_ = comm.consumerConn.Close()
 	log.Printf("consumer tries to reconnect ...")

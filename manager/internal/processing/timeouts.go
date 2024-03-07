@@ -11,5 +11,5 @@ func CalcTimeoutWithTaskCount(partCount uint64, taskCount uint64) time.Duration 
 }
 
 func CalcTimeoutsWithNumWorkers(partCount uint64, numWorkers uint64) time.Duration {
-	return CalcTimeout(partCount) * time.Duration(numWorkers)
+	return time.Duration(float64(CalcTimeout(partCount)) * float64(numWorkers) * 1.1)
 }

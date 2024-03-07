@@ -92,7 +92,7 @@ func (m *MongoStorage) Atomically(reqID uuid.UUID, fn func(req *RequestMetadata)
 	})
 	if err != nil {
 		_ = session.AbortTransaction(m.Ctx())
-		log.Printf("err type = %T", err)
+		log.Printf("err type = %T: %s", err, err)
 		return RequestMetadata{}, fmt.Errorf("requestID: %s error while executing transaction: %s", reqID, err)
 	}
 	return result, nil

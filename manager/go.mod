@@ -1,9 +1,12 @@
 module distributed.systems.labs/manager
 
-go 1.21
+go 1.21.0
+
+toolchain go1.22.0
 
 require (
 	distributed.systems.labs/shared/pkg/alphabet v0.0.0-unpublished
+	distributed.systems.labs/shared/pkg/communication v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/contracts v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/middlewares v0.0.0-unpublished
 	github.com/google/uuid v1.6.0
@@ -17,6 +20,8 @@ replace distributed.systems.labs/shared/pkg/middlewares v0.0.0-unpublished => ./
 replace distributed.systems.labs/shared/pkg/alphabet v0.0.0-unpublished => ./../shared/pkg/alphabet
 
 replace distributed.systems.labs/shared/pkg/contracts v0.0.0-unpublished => ./../shared/pkg/contracts
+
+replace distributed.systems.labs/shared/pkg/communication v0.0.0-unpublished => ./../shared/pkg/communication
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

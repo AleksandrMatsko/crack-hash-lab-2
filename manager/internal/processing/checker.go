@@ -70,10 +70,13 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 
 			sending.BalanceAndSendLoop(logger, workers, timeoutedTasks, S, m)
 
-			_, _ = S.Atomically(requestID, func(req *storage.RequestMetadata) error {
+			_, err = S.Atomically(requestID, func(req *storage.RequestMetadata) error {
 				status = req.Status
 				return nil
 			})
+			if err != nil {
+				logger.Printf("error while getting status: %s", err)
+			}
 			if status != config.Error {
 				timer.Reset(timeout)
 			} else {

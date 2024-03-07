@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"log"
+	"strconv"
+	"time"
 )
 
 func configureEnvs() {
@@ -20,6 +22,7 @@ func configureEnvs() {
 	_ = viper.BindEnv(rabbitMQTaskExchangeKey, appEnvRabbitMQPrefix+"_TASK_EXCHANGE")
 	_ = viper.BindEnv(rabbitMQResultExchangeKey, appEnvRabbitMQPrefix+"_RESULT_EXCHANGE")
 	_ = viper.BindEnv(rabbitMQTaskQueueKey, appEnvRabbitMQPrefix+"_TASK_QUEUE")
+	_ = viper.BindEnv(rabbitMQReconnectTimeoutKey, appEnvRabbitMQPrefix+"_RECONNECT_TIMEOUT")
 }
 
 func ConfigureApp() {
@@ -89,4 +92,16 @@ func GetRabbitMQTaskQueue() string {
 		return defaultTaskQueue
 	}
 	return s
+}
+
+func GetRabbitMQReconnectTimeout() time.Duration {
+	s := viper.GetString(rabbitMQReconnectTimeoutKey)
+	if s == "" {
+		return defaultReconnectTimeout
+	}
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		return defaultReconnectTimeout
+	}
+	return time.Duration(val)
 }

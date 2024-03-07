@@ -10,6 +10,7 @@ require (
 require (
 	distributed.systems.labs/shared/pkg/alphabet v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/cartesian-gen v0.0.0-unpublished
+	distributed.systems.labs/shared/pkg/communication v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/contracts v0.0.0-unpublished
 	distributed.systems.labs/shared/pkg/middlewares v0.0.0-unpublished
 )
@@ -21,6 +22,7 @@ replace distributed.systems.labs/shared/pkg/contracts v0.0.0-unpublished => ./..
 replace (
 	distributed.systems.labs/shared/pkg/alphabet v0.0.0-unpublished => ./../shared/pkg/alphabet
 	distributed.systems.labs/shared/pkg/cartesian-gen v0.0.0-unpublished => ./../shared/pkg/cartesian-gen
+	distributed.systems.labs/shared/pkg/communication v0.0.0-unpublished => ./../shared/pkg/communication
 )
 
 require (
