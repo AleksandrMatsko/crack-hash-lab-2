@@ -14,6 +14,7 @@ type RabbitMQCommunicator struct {
 	consumerConn     *amqp.Connection
 	publisherConn    *amqp.Connection
 	reconnectTimeout time.Duration
+	toSendBuf        [][]byte
 	connStr          string
 }
 
@@ -35,6 +36,7 @@ func InitRabbitMQCommunicator(
 		consumerConn:     consumerConn,
 		publisherConn:    publisherConn,
 		reconnectTimeout: reconnectTimeout,
+		toSendBuf:        make([][]byte, 0),
 		connStr:          connStr,
 	}, nil
 }
@@ -106,6 +108,35 @@ func (comm *RabbitMQCommunicator) publisher(
 	}()
 	counter := 0
 	logger.Printf("start")
+
+	if len(comm.toSendBuf) != 0 {
+		logger.Printf("there are %v messages pending. Sending...", len(comm.toSendBuf))
+		for len(comm.toSendBuf) != 0 {
+			err := ch.PublishWithContext(
+				ctx,
+				exchangeName, // exchange
+				"",           // routing key
+				false,        // mandatory
+				false,        // immediate
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        comm.toSendBuf[0],
+				})
+			if err != nil {
+				logger.Printf("error while publishing: %s", err)
+				var mqErr *amqp.Error
+				if errors.As(err, &mqErr) {
+					go comm.reconnectPublisher(exchangeName, dataSource)
+				}
+				return
+			}
+			comm.toSendBuf = comm.toSendBuf[1:]
+			counter += 1
+			logger.Printf("published %v messages", counter)
+		}
+		logger.Printf("all messages sent")
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -129,6 +160,7 @@ func (comm *RabbitMQCommunicator) publisher(
 				logger.Printf("error while publishing: %s", err)
 				var mqErr *amqp.Error
 				if errors.As(err, &mqErr) {
+					comm.toSendBuf = append(comm.toSendBuf, data)
 					go comm.reconnectPublisher(exchangeName, dataSource)
 				}
 				return

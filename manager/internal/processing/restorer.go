@@ -38,6 +38,7 @@ func Restorer(ctx context.Context, S storage.Storage) {
 	default:
 		return
 	}
+	logger.Printf("found %v requests with status = IN_PROGRESS", len(reqs))
 	for i := range reqs {
 		timeout := CalcTimeoutsWithNumWorkers(reqs[i].Tasks[0].PartCount, uint64(numWorkers))
 		go RequestChecker(ctx, logger, reqs[i].ID, timeout, S)
