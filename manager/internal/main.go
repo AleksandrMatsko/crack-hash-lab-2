@@ -4,6 +4,7 @@ import (
 	"context"
 	"distributed.systems.labs/manager/internal/api"
 	"distributed.systems.labs/manager/internal/config"
+	"distributed.systems.labs/manager/internal/processing"
 	"distributed.systems.labs/manager/internal/storage"
 	"distributed.systems.labs/shared/pkg/alphabet"
 	"distributed.systems.labs/shared/pkg/communication"
@@ -111,6 +112,8 @@ func Main() {
 
 	A := alphabet.InitAlphabet(prepareAlphabetRunes())
 	log.Printf("alphabet: '%s'", A.ToOneLine())
+
+	go processing.Restorer(ctx, store)
 
 	r := api.ConfigureEndpoints(store, A)
 	srv := &http.Server{

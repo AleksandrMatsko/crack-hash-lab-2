@@ -179,3 +179,19 @@ func (m *MongoStorage) getCollection() *mongo.Collection {
 			options.Collection().
 				SetReadPreference(readpref.Primary()))
 }
+
+func (m *MongoStorage) GetInProgressRequests() ([]RequestMetadata, error) {
+	collection := m.getCollection()
+
+	filter := bson.D{{"status", "IN_PROGRESS"}}
+	cur, err := collection.Find(m.Ctx(), filter)
+	if err != nil {
+		return nil, err
+	}
+	var results []RequestMetadata
+	err = cur.All(m.Ctx(), &results)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
