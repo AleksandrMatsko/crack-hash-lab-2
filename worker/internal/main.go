@@ -4,7 +4,6 @@ import (
 	"context"
 	"distributed.systems.labs/shared/pkg/communication"
 	"distributed.systems.labs/shared/pkg/contracts"
-	"distributed.systems.labs/worker/internal/api"
 	"distributed.systems.labs/worker/internal/calc"
 	"distributed.systems.labs/worker/internal/config"
 	"distributed.systems.labs/worker/internal/notify"
@@ -12,10 +11,8 @@ import (
 	"fmt"
 
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
-	"time"
 )
 
 func setupCommunicator(comm *communication.RabbitMQCommunicator) error {
@@ -96,7 +93,7 @@ func Main() {
 		return nil
 	})
 
-	r := api.ConfigureEndpoints(managerNotifier)
+	/*r := api.ConfigureEndpoints(managerNotifier)
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", host, port),
 		Handler: r,
@@ -108,7 +105,7 @@ func Main() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.Println(err)
 		}
-	}()
+	}()*/
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -117,7 +114,7 @@ func Main() {
 	<-c
 	log.Println("shutting down")
 
-	ctx, cancelTimeout := context.WithTimeout(ctx, time.Second*10)
+	/*ctx, cancelTimeout := context.WithTimeout(ctx, time.Second*10)
 	defer cancelTimeout()
-	srv.Shutdown(ctx)
+	srv.Shutdown(ctx)*/
 }

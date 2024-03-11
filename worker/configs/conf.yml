@@ -9,4 +9,3 @@ rabbitmq:
   taskExchange: tasks
   taskQueue: task_queue
   resultExchange: results
-  reconnectTimeout: 10

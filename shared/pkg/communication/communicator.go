@@ -119,8 +119,9 @@ func (comm *RabbitMQCommunicator) publisher(
 				false,        // mandatory
 				false,        // immediate
 				amqp.Publishing{
-					ContentType: "application/json",
-					Body:        comm.toSendBuf[0],
+					ContentType:  "application/json",
+					Body:         comm.toSendBuf[0],
+					DeliveryMode: amqp.Persistent,
 				})
 			if err != nil {
 				logger.Printf("error while publishing: %s", err)
@@ -153,8 +154,9 @@ func (comm *RabbitMQCommunicator) publisher(
 				false,        // mandatory
 				false,        // immediate
 				amqp.Publishing{
-					ContentType: "application/json",
-					Body:        data,
+					ContentType:  "application/json",
+					Body:         data,
+					DeliveryMode: amqp.Persistent,
 				})
 			if err != nil {
 				logger.Printf("error while publishing: %s", err)
