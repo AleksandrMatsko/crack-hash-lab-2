@@ -12,7 +12,8 @@ import (
 )
 
 func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID, timeout time.Duration, S storage.Storage) {
-	logger.Printf("starting request checker with timeout %v", timeout)
+	logger.Printf("starting checker with timeout %v", timeout)
+	defer logger.Println("checker exited")
 	timer := time.NewTimer(timeout)
 	for {
 		select {
@@ -20,10 +21,10 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 			if !timer.Stop() {
 				<-timer.C
 			}
-			logger.Println("request checker stops from context")
+			logger.Println("checker stopped from context")
 
 		case <-timer.C:
-			logger.Printf("request checker woke up after %v", timeout)
+			logger.Printf("checker woke up after %v", timeout)
 			timeoutedTasks := make([]tasks.Task, 0)
 			var status config.RequestStatus
 			m, err := S.Atomically(requestID, func(metadata *storage.RequestMetadata) error {
@@ -41,11 +42,12 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 				return nil
 			})
 			if err != nil {
-				logger.Printf("request checker has err while checking timeouted tasks: %s", err)
-				return
+				logger.Printf("checker has err while checking timeouted tasks: %s", err)
+				timer.Reset(timeout)
+				continue
 			}
 			if status != config.InProgress {
-				logger.Printf("request status = %s, request checker stopping...", status)
+				logger.Printf("request status = %s, checker stopping...", status)
 				return
 			}
 
@@ -54,16 +56,16 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 				continue
 			}
 
-			logger.Printf("request checker needs to rebalance %v tasks", len(timeoutedTasks))
+			logger.Printf("checker needs to rebalance %v tasks", len(timeoutedTasks))
 
 			workers, err := config.GetWorkers()
 			if err != nil {
-				logger.Printf("request checker error while getting workers: %s", err)
+				logger.Printf("checker error while getting workers: %s", err)
 				storage.SetStatusErrAndSave(logger, S, requestID)
 				return
 			}
 			if len(workers) == 0 {
-				logger.Printf("request checker error: no workers")
+				logger.Printf("checker error: no workers")
 				storage.SetStatusErrAndSave(logger, S, requestID)
 				return
 			}
@@ -75,12 +77,11 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 				return nil
 			})
 			if err != nil {
-				logger.Printf("error while getting status: %s", err)
+				logger.Printf("checker error while getting status: %s", err)
 			}
 			if status != config.Error {
 				timer.Reset(timeout)
 			} else {
-				logger.Println("request checker exiting")
 				return
 			}
 		}
