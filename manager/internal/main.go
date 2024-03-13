@@ -4,8 +4,12 @@ import (
 	"context"
 	"distributed.systems.labs/manager/internal/api"
 	"distributed.systems.labs/manager/internal/config"
+	"distributed.systems.labs/manager/internal/processing"
 	"distributed.systems.labs/manager/internal/storage"
 	"distributed.systems.labs/shared/pkg/alphabet"
+	"distributed.systems.labs/shared/pkg/communication"
+	"distributed.systems.labs/shared/pkg/contracts"
+	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
 	"log"
@@ -26,15 +30,24 @@ func prepareAlphabetRunes() []rune {
 	return runes
 }
 
+func setupCommunicator(comm *communication.RabbitMQCommunicator) error {
+	err := comm.DeclareExchange(config.GetRabbitMQTaskExchange())
+	if err != nil {
+		return err
+	}
+	err = comm.DeclareExchange(config.GetRabbitMQResultExchange())
+	if err != nil {
+		return err
+	}
+	err = comm.DeclareQueueAndBind(config.GetRabbitMQResultQueue(), config.GetRabbitMQResultExchange())
+	return err
+}
+
 func Main() {
 	config.ConfigureApp()
-	host := viper.GetString("server.host")
-	if host == "" {
-		log.Fatalf("no host provided")
-	}
-	port := viper.GetString("server.port")
-	if port == "" {
-		log.Fatalf("no port provided")
+	host, port, err := config.GetHostPort()
+	if err != nil {
+		log.Fatalf("error occured while starting: %s", err)
 	}
 	log.Printf("configure to listen on http://%s:%s", host, port)
 	log.Printf("workers %s", viper.GetString("workers.list"))
@@ -42,9 +55,65 @@ func Main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	store := storage.InitInMemoryStorage(ctx)
+	var store storage.Storage
+	connStr, err := config.GetMongoConnStr()
+	if err != nil {
+		log.Printf("failed to get mongo connection string: %s", err)
+		log.Printf("using in memory storage...")
+		store = storage.InitInMemoryStorage(ctx)
+	} else {
+		store, err = storage.InitMongoStorage(ctx, connStr)
+		if err != nil {
+			log.Fatalf("failed to connect to mongo: %s", err)
+		}
+		defer store.Close()
+		log.Println("successfully connected to mongodb")
+	}
+
+	mqConnStr, err := config.GetRabbitMQConnStr()
+	if err != nil {
+		log.Fatalf("failed to get RabbitMQ connection string: %s", err)
+	}
+	comm, err := communication.InitRabbitMQCommunicator(ctx, mqConnStr, config.GetRabbitMQReconnectTimeout())
+	if err != nil {
+		log.Fatalf("failed to init communicator: %s", err)
+	}
+	defer comm.Close()
+
+	err = setupCommunicator(comm)
+	if err != nil {
+		log.Fatalf("failed to setup communicator: %s", err)
+	}
+
+	toSendChan := make(chan []byte, 1)
+	defer close(toSendChan)
+	config.SetToSendChan(toSendChan)
+
+	err = comm.RunPublisher(config.GetRabbitMQTaskExchange(), toSendChan)
+	if err != nil {
+		log.Fatalf("failed to start publisher: %s", err)
+	}
+	err = comm.RunConsumer(config.GetRabbitMQResultQueue(), func(data []byte, logger *log.Logger) error {
+		var req contracts.TaskResultRequest
+		err := json.Unmarshal(data, &req)
+		if err != nil {
+			return fmt.Errorf("failed to decode request body to json: %s", err)
+		}
+
+		err = store.AddCracks(req.RequestID, req.Cracks, req.StartIndex)
+		if err != nil {
+			return fmt.Errorf("requestId %s failed to add new cracks %s", req.RequestID, err)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("failed to start consumer: %s", err)
+	}
+
 	A := alphabet.InitAlphabet(prepareAlphabetRunes())
 	log.Printf("alphabet: '%s'", A.ToOneLine())
+
+	go processing.Restorer(ctx, store)
 
 	r := api.ConfigureEndpoints(store, A)
 	srv := &http.Server{

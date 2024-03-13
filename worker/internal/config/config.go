@@ -4,13 +4,25 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"log"
+	"strconv"
+	"time"
 )
 
 func configureEnvs() {
-	_ = viper.BindEnv("server.host", appEnvServerPrefix+"_HOST")
-	_ = viper.BindEnv("server.port", appEnvServerPrefix+"_PORT")
-	_ = viper.BindEnv("manager.host", appEnvManagerPrefix+"_HOST")
-	_ = viper.BindEnv("manager.port", appEnvManagerPrefix+"_PORT")
+	// bind envs to server keys
+	_ = viper.BindEnv(serverHostKey, appEnvServerPrefix+"_HOST")
+	_ = viper.BindEnv(serverPortKey, appEnvServerPrefix+"_PORT")
+
+	// bind envs to manager keys
+	_ = viper.BindEnv(managerHostKey, appEnvManagerPrefix+"_HOST")
+	_ = viper.BindEnv(managerPortKey, appEnvManagerPrefix+"_PORT")
+
+	// bind envs to RabbitMQ keys
+	_ = viper.BindEnv(rabbitMQConnStrKey, appEnvRabbitMQPrefix+"_CONNSTR")
+	_ = viper.BindEnv(rabbitMQTaskExchangeKey, appEnvRabbitMQPrefix+"_TASK_EXCHANGE")
+	_ = viper.BindEnv(rabbitMQResultExchangeKey, appEnvRabbitMQPrefix+"_RESULT_EXCHANGE")
+	_ = viper.BindEnv(rabbitMQTaskQueueKey, appEnvRabbitMQPrefix+"_TASK_QUEUE")
+	_ = viper.BindEnv(rabbitMQReconnectTimeoutKey, appEnvRabbitMQPrefix+"_RECONNECT_TIMEOUT")
 }
 
 func ConfigureApp() {
@@ -26,14 +38,70 @@ func ConfigureApp() {
 	viper.AutomaticEnv()
 }
 
+func GetHostPort() (string, string, error) {
+	host := viper.GetString(serverHostKey)
+	if host == "" {
+		return "", "", ErrNoHost
+	}
+	port := viper.GetString(serverPortKey)
+	if port == "" {
+		return "", "", ErrNoPort
+	}
+	return host, port, nil
+}
+
 func GetManagerHostAndPort() (string, error) {
-	host := viper.GetString("manager.host")
+	host := viper.GetString(managerHostKey)
 	if host == "" {
 		return "", ErrEmptyManagerHost
 	}
-	port := viper.GetString("manager.port")
+	port := viper.GetString(managerPortKey)
 	if port == "" {
 		return "", ErrEmptyManagerPort
 	}
 	return fmt.Sprintf("%s:%s", host, port), nil
+}
+
+func GetRabbitMQConnStr() (string, error) {
+	s := viper.GetString(rabbitMQConnStrKey)
+	if s == "" {
+		return "", ErrNoRabbitMQConnStr
+	}
+	return s, nil
+}
+
+func GetRabbitMQTaskExchange() string {
+	s := viper.GetString(rabbitMQTaskExchangeKey)
+	if s == "" {
+		return defaultTaskExchange
+	}
+	return s
+}
+
+func GetRabbitMQResultExchange() string {
+	s := viper.GetString(rabbitMQResultExchangeKey)
+	if s == "" {
+		return defaultResultExchange
+	}
+	return s
+}
+
+func GetRabbitMQTaskQueue() string {
+	s := viper.GetString(rabbitMQTaskQueueKey)
+	if s == "" {
+		return defaultTaskQueue
+	}
+	return s
+}
+
+func GetRabbitMQReconnectTimeout() time.Duration {
+	s := viper.GetString(rabbitMQReconnectTimeoutKey)
+	if s == "" {
+		return defaultReconnectTimeout
+	}
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		return defaultReconnectTimeout
+	}
+	return time.Duration(val)
 }

@@ -9,8 +9,8 @@ import (
 
 type RequestMetadata struct {
 	Alphabet  alphabet.Alphabet
-	ID        uuid.UUID
-	Status    config.RequestStatus
+	ID        uuid.UUID            `bson:"_id"`
+	Status    config.RequestStatus `bson:"status"`
 	Cracks    []string
 	Hash      string
 	MaxLength int

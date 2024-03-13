@@ -11,9 +11,6 @@ type Task struct {
 	Done       bool
 	StartedAt  time.Time
 
-	// Assigned is the host & port of worker to which task was assigned
-	Assigned string
-
 	// TaskIdx is the index of task in storage.RequestMetadata.Tasks array
 	TaskIdx int
 }
@@ -65,6 +62,8 @@ func CalcTasks(
 		tasks[i] = Task{
 			StartIndex: startIndex,
 			PartCount:  basePartCount,
+			StartedAt:  time.Now(),
+			TaskIdx:    i,
 		}
 		if uint64(i) < rest {
 			tasks[i].PartCount += 1
@@ -96,6 +95,7 @@ func CalcTasksWithFixedLength(
 				PartCount:  rest,
 				Done:       false,
 				TaskIdx:    int(i),
+				StartedAt:  time.Now(),
 			}
 		} else {
 			tasks[i] = Task{
@@ -103,6 +103,7 @@ func CalcTasksWithFixedLength(
 				PartCount:  maxTaskSize,
 				Done:       false,
 				TaskIdx:    int(i),
+				StartedAt:  time.Now(),
 			}
 		}
 		startIndex += tasks[i].PartCount
@@ -129,6 +130,8 @@ func CalcTasksWithNumWorkers(
 		tasks[i] = Task{
 			StartIndex: startIndex,
 			PartCount:  basePartCount,
+			StartedAt:  time.Now(),
+			TaskIdx:    i,
 		}
 		if uint64(i) < rest {
 			tasks[i].PartCount += 1

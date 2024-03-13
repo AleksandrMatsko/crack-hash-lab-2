@@ -26,10 +26,10 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 			logger.Printf("request checker woke up after %v", timeout)
 			timeoutedTasks := make([]tasks.Task, 0)
 			var status config.RequestStatus
-			m, err := S.Atomically(requestID, func(metadata *storage.RequestMetadata) {
+			m, err := S.Atomically(requestID, func(metadata *storage.RequestMetadata) error {
 				status = metadata.Status
 				if metadata.Status == config.Ready || metadata.Status == config.Error {
-					return
+					return nil
 				}
 
 				for _, t := range metadata.Tasks {
@@ -38,6 +38,7 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 						timeoutedTasks = append(timeoutedTasks, tsk)
 					}
 				}
+				return nil
 			})
 			if err != nil {
 				logger.Printf("request checker has err while checking timeouted tasks: %s", err)
@@ -69,9 +70,13 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 
 			sending.BalanceAndSendLoop(logger, workers, timeoutedTasks, S, m)
 
-			_, _ = S.Atomically(requestID, func(req *storage.RequestMetadata) {
+			_, err = S.Atomically(requestID, func(req *storage.RequestMetadata) error {
 				status = req.Status
+				return nil
 			})
+			if err != nil {
+				logger.Printf("error while getting status: %s", err)
+			}
 			if status != config.Error {
 				timer.Reset(timeout)
 			} else {

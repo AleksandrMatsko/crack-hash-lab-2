@@ -1,27 +1,29 @@
 package alphabet
 
-import "strings"
+import (
+	"strings"
+)
 
 type Alphabet struct {
-	runes []rune
+	Runes []rune
 }
 
 func InitAlphabet(runes []rune) Alphabet {
-	return Alphabet{runes: runes}
+	return Alphabet{Runes: runes}
 }
 
 func (a *Alphabet) Length() int {
-	return len(a.runes)
+	return len(a.Runes)
 }
 
 func (a *Alphabet) GetWord(ids []uint64) string {
 	builder := strings.Builder{}
 	for _, v := range ids {
-		builder.WriteRune(a.runes[v])
+		builder.WriteRune(a.Runes[v])
 	}
 	return builder.String()
 }
 
 func (a *Alphabet) ToOneLine() string {
-	return string(a.runes)
+	return string(a.Runes)
 }

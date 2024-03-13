@@ -4,3 +4,8 @@ server:
 manager:
   host: localhost
   port: 8000
+rabbitmq:
+  connStr: amqp://rmuser:rmpassword@rabbitmq:5672/crackHash
+  taskExchange: tasks
+  taskQueue: task_queue
+  resultExchange: results

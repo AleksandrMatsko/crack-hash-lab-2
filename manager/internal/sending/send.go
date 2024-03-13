@@ -1,18 +1,16 @@
 package sending
 
 import (
-	"bytes"
 	"distributed.systems.labs/manager/internal/balance"
+	"distributed.systems.labs/manager/internal/config"
 	"distributed.systems.labs/manager/internal/storage"
 	"distributed.systems.labs/manager/internal/tasks"
 	"distributed.systems.labs/shared/pkg/contracts"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 	"sync"
-	"time"
 )
 
 func sendToWorker(logger *log.Logger, hostPort string, req contracts.TaskRequest) error {
@@ -21,7 +19,7 @@ func sendToWorker(logger *log.Logger, hostPort string, req contracts.TaskRequest
 		return err
 	}
 
-	r, err := http.Post(
+	/*r, err := http.Post(
 		fmt.Sprintf("http://%s/internal/api/worker/hash/crack/task", hostPort),
 		"application/json",
 		bytes.NewReader(reqBytes))
@@ -32,7 +30,8 @@ func sendToWorker(logger *log.Logger, hostPort string, req contracts.TaskRequest
 	logger.Printf("worker %s response: %s", hostPort, r.Status)
 	if r.StatusCode != http.StatusOK {
 		// TODO better handling
-	}
+	}*/
+	config.GetToSendChan() <- reqBytes
 	return nil
 }
 
@@ -76,9 +75,11 @@ func SendToWorkers(
 					notSentTasksMtx.Unlock()
 					return
 				}
-				_, _ = S.Atomically(m.ID, func(r *storage.RequestMetadata) {
+				/*_, err = S.Atomically(m.ID, func(r *storage.RequestMetadata) error {
 					r.Tasks[t.TaskIdx].StartedAt = time.Now()
+					return nil
 				})
+				logger.Printf("Error after updating start time %s", err)*/
 			}
 
 			workersOKMtx.Lock()
