@@ -4,6 +4,7 @@ import (
 	"context"
 	"distributed.systems.labs/shared/pkg/communication"
 	"distributed.systems.labs/shared/pkg/contracts"
+	"distributed.systems.labs/worker/internal/cache"
 	"distributed.systems.labs/worker/internal/calc"
 	"distributed.systems.labs/worker/internal/config"
 	"distributed.systems.labs/worker/internal/notify"
@@ -30,18 +31,6 @@ func setupCommunicator(comm *communication.RabbitMQCommunicator) error {
 
 func Main() {
 	config.ConfigureApp()
-
-	host, port, err := config.GetHostPort()
-	if err != nil {
-		log.Fatalf("error occured while starting: %s", err)
-	}
-	log.Printf("configure to listen on http://%s:%s", host, port)
-
-	managerHost, err := config.GetManagerHostAndPort()
-	if err != nil {
-		log.Fatalf("error occured while starting: %s", err)
-	}
-	log.Printf("manager %s", managerHost)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -72,6 +61,8 @@ func Main() {
 		managerNotifier.ListenAndNotify()
 	}()
 
+	reqCache := cache.New()
+
 	err = comm.RunPublisher(config.GetRabbitMQResultExchange(), pubChan)
 	if err != nil {
 		log.Fatalf("error while starting publisher: %s", err)
@@ -88,24 +79,26 @@ func Main() {
 			return fmt.Errorf("validation failed with err: %s", err)
 		}
 
+		val, ok := reqCache.GetOrAdd(req)
+		if ok {
+			logger.Printf("found in cache")
+			switch val.Status {
+			case config.Done:
+				logger.Printf("done crack for hash: %s, request-id: %s startIdx = %v partCount = %v",
+					req.ToCrack, req.RequestID, req.StartIndex, req.PartCount)
+				managerNotifier.GetResChan() <- val.Rsp
+				return nil
+			case config.InProgress:
+				logger.Printf("in progress crack for hash: %s, request-id: %s startIdx = %v partCount = %v",
+					req.ToCrack, req.RequestID, req.StartIndex, req.PartCount)
+				return nil
+			}
+		}
+
 		logger.Printf("starting crack for hash: %s, request-id: %s ...", req.ToCrack, req.RequestID)
-		go calc.ProcessRequest(ctx, req, managerNotifier.GetResChan())
+		go calc.ProcessRequest(ctx, req, managerNotifier.GetResChan(), reqCache)
 		return nil
 	})
-
-	/*r := api.ConfigureEndpoints(managerNotifier)
-	srv := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", host, port),
-		Handler: r,
-	}
-
-	// Run our server in a goroutine so that it doesn't block.
-	go func() {
-		log.Printf("listening ...")
-		if err := srv.ListenAndServe(); err != nil {
-			log.Println(err)
-		}
-	}()*/
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -113,8 +106,4 @@ func Main() {
 	// Block until we receive our signal.
 	<-c
 	log.Println("shutting down")
-
-	/*ctx, cancelTimeout := context.WithTimeout(ctx, time.Second*10)
-	defer cancelTimeout()
-	srv.Shutdown(ctx)*/
 }

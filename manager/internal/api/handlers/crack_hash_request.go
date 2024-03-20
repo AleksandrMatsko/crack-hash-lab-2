@@ -63,27 +63,10 @@ func HandleCrackHashRequest(w http.ResponseWriter, r *http.Request) {
 		Status:    config.InProgress,
 	}
 
-	workers, err := config.GetWorkers()
-	if err != nil {
-		logger.Printf("failed to get workers: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	numWorkers := uint64(len(workers))
-	if numWorkers == 0 {
-		logger.Printf("no workers in config")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	numParts := config.GetTaskNumParts()
+	logger.Printf("numParts = %v", numParts)
+	preparedTasks := tasks.CalcTasksWithFixedNumParts(metadata.Alphabet.Length(), metadata.MaxLength, numParts)
 
-	taskSize, err := config.GetTaskSize()
-	if err != nil {
-		logger.Printf("failed to get task size: %s", err)
-	}
-	logger.Printf("taskSize = %v", taskSize)
-
-	//preparedTasks := tasks.CalcTasksWithFixedLength(m.Alphabet.Length(), m.MaxLength, taskSize)
-	preparedTasks := tasks.CalcTasksWithNumWorkers(metadata.Alphabet.Length(), metadata.MaxLength, numWorkers, 10)
 	metadata.Tasks = preparedTasks
 	builder := strings.Builder{}
 	builder.WriteString("calculated tasks:\n")
@@ -108,12 +91,12 @@ func HandleCrackHashRequest(w http.ResponseWriter, r *http.Request) {
 		defaultLogger.Flags()|log.Lmsgprefix)
 
 	go func() {
-		sending.BalanceAndSendLoop(requestLogger, workers, preparedTasks, S, metadata)
+		sending.SendLoop(requestLogger, preparedTasks, metadata)
 		processing.RequestChecker(
 			S.Ctx(),
 			requestLogger,
 			metadata.ID,
-			processing.CalcTimeoutsWithNumWorkers(preparedTasks[0].PartCount, numWorkers),
+			processing.CalcTimeout(preparedTasks[0].PartCount),
 			S)
 	}()
 

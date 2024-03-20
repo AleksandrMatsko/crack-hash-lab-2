@@ -26,9 +26,7 @@ const (
 	serverPortKey = "server.port"
 
 	// workers keys
-	workersListKey     = "workers.list"
-	workersTaskSizeKey = "workers.taskSize"
-	workersCountKey    = "workers.count"
+	workersTaskNumParts = "workers.taskNumParts"
 
 	// MongoDB keys
 	mongoConnStrKey = "mongo.connStr"
@@ -43,6 +41,9 @@ const (
 )
 
 const (
+	// default values for workers
+	defaultTaskNumParts = 10
+
 	// default values for MongoDB
 	defaultDBName         = "CrackHash"
 	defaultCollectionName = "Requests"

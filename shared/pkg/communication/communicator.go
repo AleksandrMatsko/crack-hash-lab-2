@@ -135,7 +135,7 @@ func (comm *RabbitMQCommunicator) publisher(
 			counter += 1
 			logger.Printf("published %v messages", counter)
 		}
-		logger.Printf("all messages sent")
+		logger.Printf("all pending messages sent")
 	}
 
 	for {
