@@ -6,6 +6,7 @@ import (
 	"distributed.systems.labs/shared/pkg/alphabet"
 	"distributed.systems.labs/shared/pkg/cartesian-gen"
 	"distributed.systems.labs/shared/pkg/contracts"
+	"distributed.systems.labs/worker/internal/cache"
 	"fmt"
 	"log"
 )
@@ -81,7 +82,12 @@ func calcIterationInfos(logger *log.Logger, alphabetLength uint64, maxLength int
 }
 
 // ProcessRequest should be called in separate goroutine from endpoint handler
-func ProcessRequest(ctx context.Context, req contracts.TaskRequest, resChan chan<- contracts.TaskResultRequest) {
+func ProcessRequest(
+	ctx context.Context,
+	req contracts.TaskRequest,
+	resChan chan<- contracts.TaskResultRequest,
+	reqCache *cache.Cache,
+) {
 	defaultLogger := log.Default()
 	logger := log.New(
 		defaultLogger.Writer(),
@@ -131,5 +137,6 @@ func ProcessRequest(ctx context.Context, req contracts.TaskRequest, resChan chan
 		RequestID:  req.RequestID,
 		Cracks:     cracks,
 	}
+	reqCache.SetDone(req, res)
 	resChan <- res
 }

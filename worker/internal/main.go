@@ -4,6 +4,7 @@ import (
 	"context"
 	"distributed.systems.labs/shared/pkg/communication"
 	"distributed.systems.labs/shared/pkg/contracts"
+	"distributed.systems.labs/worker/internal/cache"
 	"distributed.systems.labs/worker/internal/calc"
 	"distributed.systems.labs/worker/internal/config"
 	"distributed.systems.labs/worker/internal/notify"
@@ -60,6 +61,8 @@ func Main() {
 		managerNotifier.ListenAndNotify()
 	}()
 
+	reqCache := cache.New()
+
 	err = comm.RunPublisher(config.GetRabbitMQResultExchange(), pubChan)
 	if err != nil {
 		log.Fatalf("error while starting publisher: %s", err)
@@ -76,8 +79,24 @@ func Main() {
 			return fmt.Errorf("validation failed with err: %s", err)
 		}
 
+		val, ok := reqCache.GetOrAdd(req)
+		if ok {
+			logger.Printf("found in cache")
+			switch val.Status {
+			case config.Done:
+				logger.Printf("done crack for hash: %s, request-id: %s startIdx = %v partCount = %v",
+					req.ToCrack, req.RequestID, req.StartIndex, req.PartCount)
+				managerNotifier.GetResChan() <- val.Rsp
+				return nil
+			case config.InProgress:
+				logger.Printf("in progress crack for hash: %s, request-id: %s startIdx = %v partCount = %v",
+					req.ToCrack, req.RequestID, req.StartIndex, req.PartCount)
+				return nil
+			}
+		}
+
 		logger.Printf("starting crack for hash: %s, request-id: %s ...", req.ToCrack, req.RequestID)
-		go calc.ProcessRequest(ctx, req, managerNotifier.GetResChan())
+		go calc.ProcessRequest(ctx, req, managerNotifier.GetResChan(), reqCache)
 		return nil
 	})
 

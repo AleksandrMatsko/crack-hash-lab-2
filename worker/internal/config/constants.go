@@ -23,3 +23,10 @@ const (
 	defaultTaskQueue        = "task_queue"
 	defaultReconnectTimeout = time.Second * 10
 )
+
+type RequestStatus string
+
+const (
+	InProgress RequestStatus = "IN_PROGRESS"
+	Done       RequestStatus = "Done"
+)
