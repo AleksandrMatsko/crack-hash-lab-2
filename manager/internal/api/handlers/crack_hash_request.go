@@ -108,7 +108,7 @@ func HandleCrackHashRequest(w http.ResponseWriter, r *http.Request) {
 		defaultLogger.Flags()|log.Lmsgprefix)
 
 	go func() {
-		sending.BalanceAndSendLoop(requestLogger, workers, preparedTasks, S, metadata)
+		sending.SendLoop(requestLogger, preparedTasks, metadata)
 		processing.RequestChecker(
 			S.Ctx(),
 			requestLogger,

@@ -25,6 +25,5 @@ func ConfigureEndpoints(s storage.Storage, a alphabet.Alphabet) *mux.Router {
 	r.HandleFunc("/api/hash/crack", handlers.HandleCrackHashRequest).Methods(http.MethodPost)
 	r.HandleFunc("/api/hash/status", handlers.HandleCrackHashStatus).Methods(http.MethodGet)
 
-	r.HandleFunc("/internal/api/manager/hash/crack/request", handlers.HandleWorkerResult).Methods(http.MethodPatch)
 	return r
 }

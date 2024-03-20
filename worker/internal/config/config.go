@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"strconv"
@@ -12,10 +11,6 @@ func configureEnvs() {
 	// bind envs to server keys
 	_ = viper.BindEnv(serverHostKey, appEnvServerPrefix+"_HOST")
 	_ = viper.BindEnv(serverPortKey, appEnvServerPrefix+"_PORT")
-
-	// bind envs to manager keys
-	_ = viper.BindEnv(managerHostKey, appEnvManagerPrefix+"_HOST")
-	_ = viper.BindEnv(managerPortKey, appEnvManagerPrefix+"_PORT")
 
 	// bind envs to RabbitMQ keys
 	_ = viper.BindEnv(rabbitMQConnStrKey, appEnvRabbitMQPrefix+"_CONNSTR")
@@ -48,18 +43,6 @@ func GetHostPort() (string, string, error) {
 		return "", "", ErrNoPort
 	}
 	return host, port, nil
-}
-
-func GetManagerHostAndPort() (string, error) {
-	host := viper.GetString(managerHostKey)
-	if host == "" {
-		return "", ErrEmptyManagerHost
-	}
-	port := viper.GetString(managerPortKey)
-	if port == "" {
-		return "", ErrEmptyManagerPort
-	}
-	return fmt.Sprintf("%s:%s", host, port), nil
 }
 
 func GetRabbitMQConnStr() (string, error) {
