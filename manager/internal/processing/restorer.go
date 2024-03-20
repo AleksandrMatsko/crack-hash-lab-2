@@ -2,7 +2,6 @@ package processing
 
 import (
 	"context"
-	"distributed.systems.labs/manager/internal/config"
 	"distributed.systems.labs/manager/internal/storage"
 	"fmt"
 	"log"
@@ -16,18 +15,8 @@ func Restorer(ctx context.Context, S storage.Storage) {
 		defaultLogger.Flags()|log.Lmsgprefix,
 	)
 
-	workers, err := config.GetWorkers()
-	if err != nil {
-		logger.Printf("failed to get workers: %s", err)
-		return
-	}
-	numWorkers := len(workers)
-	if numWorkers == 0 {
-		logger.Printf("no workers")
-		return
-	}
-
 	var reqs []storage.RequestMetadata
+	var err error
 	switch s := S.(type) {
 	case *storage.MongoStorage:
 		reqs, err = s.GetInProgressRequests()
@@ -40,7 +29,7 @@ func Restorer(ctx context.Context, S storage.Storage) {
 	}
 	logger.Printf("found %v requests with status = IN_PROGRESS", len(reqs))
 	for i := range reqs {
-		timeout := CalcTimeoutsWithNumWorkers(reqs[i].Tasks[0].PartCount, uint64(numWorkers))
+		timeout := CalcTimeout(reqs[i].Tasks[0].PartCount)
 		go RequestChecker(
 			ctx,
 			log.New(

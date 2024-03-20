@@ -8,10 +8,6 @@ import (
 )
 
 func configureEnvs() {
-	// bind envs to server keys
-	_ = viper.BindEnv(serverHostKey, appEnvServerPrefix+"_HOST")
-	_ = viper.BindEnv(serverPortKey, appEnvServerPrefix+"_PORT")
-
 	// bind envs to RabbitMQ keys
 	_ = viper.BindEnv(rabbitMQConnStrKey, appEnvRabbitMQPrefix+"_CONNSTR")
 	_ = viper.BindEnv(rabbitMQTaskExchangeKey, appEnvRabbitMQPrefix+"_TASK_EXCHANGE")
@@ -31,18 +27,6 @@ func ConfigureApp() {
 
 	configureEnvs()
 	viper.AutomaticEnv()
-}
-
-func GetHostPort() (string, string, error) {
-	host := viper.GetString(serverHostKey)
-	if host == "" {
-		return "", "", ErrNoHost
-	}
-	port := viper.GetString(serverPortKey)
-	if port == "" {
-		return "", "", ErrNoPort
-	}
-	return host, port, nil
 }
 
 func GetRabbitMQConnStr() (string, error) {

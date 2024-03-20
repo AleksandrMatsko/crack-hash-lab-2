@@ -58,18 +58,6 @@ func RequestChecker(ctx context.Context, logger *log.Logger, requestID uuid.UUID
 
 			logger.Printf("checker needs to rebalance %v tasks", len(timeoutedTasks))
 
-			workers, err := config.GetWorkers()
-			if err != nil {
-				logger.Printf("checker error while getting workers: %s", err)
-				storage.SetStatusErrAndSave(logger, S, requestID)
-				return
-			}
-			if len(workers) == 0 {
-				logger.Printf("checker error: no workers")
-				storage.SetStatusErrAndSave(logger, S, requestID)
-				return
-			}
-
 			sending.SendLoop(logger, timeoutedTasks, m)
 
 			timer.Reset(timeout)

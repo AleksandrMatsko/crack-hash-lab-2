@@ -31,12 +31,6 @@ func setupCommunicator(comm *communication.RabbitMQCommunicator) error {
 func Main() {
 	config.ConfigureApp()
 
-	host, port, err := config.GetHostPort()
-	if err != nil {
-		log.Fatalf("error occured while starting: %s", err)
-	}
-	log.Printf("configure to listen on http://%s:%s", host, port)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

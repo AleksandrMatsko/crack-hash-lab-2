@@ -1,11 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -16,9 +14,7 @@ func configureEnvs() {
 	_ = viper.BindEnv(serverPortKey, appEnvServerPrefix+"_PORT")
 
 	// bind envs to workers keys
-	_ = viper.BindEnv(workersListKey, appEnvWorkersPrefix+"_LIST")
-	_ = viper.BindEnv(workersTaskSizeKey, appEnvWorkersPrefix+"_TASK_SIZE")
-	_ = viper.BindEnv(workersCountKey, appEnvWorkersPrefix+"_COUNT")
+	_ = viper.BindEnv(workersTaskNumParts, appEnvWorkersPrefix+"_TASK_NUM_PARTS")
 
 	// bind envs to MongoDB keys
 	_ = viper.BindEnv(mongoConnStrKey, appEnvMongoPrefix+"_CONNSTR")
@@ -57,37 +53,13 @@ func GetHostPort() (string, string, error) {
 	return host, port, nil
 }
 
-func GetWorkers() ([]string, error) {
-	s := viper.GetString(workersListKey)
-	if s == "" {
-		return make([]string, 0), nil
-	}
-	splited := strings.Split(s, ":")
-	if len(splited)%2 != 0 {
-		return nil, ErrBadWorkersListFormat
-	}
-	workers := make([]string, 0)
-	for i := 0; i < len(splited); i += 2 {
-		if splited[i] == "" {
-			log.Printf("bad worker host: '%s'", splited[i])
-			continue
-		}
-		if splited[i+1] == "" {
-			log.Printf("bad worker port: '%s'", splited[i+1])
-			continue
-		}
-		workers = append(workers, fmt.Sprintf("%s:%s", splited[i], splited[i+1]))
-	}
-	return workers, nil
-}
-
-func GetTaskSize() (uint64, error) {
-	s := viper.GetString(workersTaskSizeKey)
+func GetTaskNumParts() uint64 {
+	s := viper.GetString(workersTaskNumParts)
 	val, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
-		return 0, err
+		return defaultTaskNumParts
 	}
-	return val, nil
+	return val
 }
 
 func GetMongoConnStr() (string, error) {
