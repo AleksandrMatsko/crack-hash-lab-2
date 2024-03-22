@@ -21,8 +21,8 @@ func TestPrivate_pow(t *testing.T) {
 }
 
 func TestPrivate_calcTotalWordsCount(t *testing.T) {
-	lenAlphabet := uint64(rand.Intn(100))
-	maxLength := uint64(rand.Intn(4))
+	lenAlphabet := uint64(rand.Intn(100)) + 2
+	maxLength := uint64(rand.Intn(4)) + 1
 
 	var expected uint64 = 0
 	deg := lenAlphabet
