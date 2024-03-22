@@ -12,7 +12,7 @@ services:
       - RABBITMQ_DEFAULT_PASS=rmpassword
       - RABBITMQ_DEFAULT_VHOST=crackHash
     volumes:
-      - ./rabbitmq:/var/lib/rabbitmq
+      - "rabbitmq_data:/var/lib/rabbitmq"
     healthcheck:
       test: [ "CMD", "rabbitmqctl", "status" ]
       interval: 5s
@@ -100,6 +100,7 @@ services:
       - "mongo3_config:/data/configdb"
 
 volumes:
+  rabbitmq_data:
   mongo1_data:
   mongo2_data:
   mongo3_data:
