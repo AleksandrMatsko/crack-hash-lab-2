@@ -9,9 +9,6 @@ type Task struct {
 	PartCount  uint64
 	Done       bool
 	StartedAt  time.Time
-
-	// TaskIdx is the index of task in storage.RequestMetadata.Tasks array
-	TaskIdx int
 }
 
 func pow[T uint | uint8 | uint16 | uint32 | uint64](base, exp T) T {
@@ -51,7 +48,6 @@ func CalcTasksWithFixedNumParts(
 			StartIndex: startIndex,
 			PartCount:  basePartCount,
 			StartedAt:  time.Now(),
-			TaskIdx:    i,
 		}
 		if uint64(i) < rest {
 			tasks[i].PartCount += 1
